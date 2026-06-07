@@ -1,14 +1,8 @@
-## 🎉 Welcome to the Job Portal! 🎉
+## 🎉 Welcome to the GetHired 🎉
 
 Happy coding! This project is a comprehensive learning experience designed to emulate a real-world job portal, complete with all the functionalities you’d expect from a professional platform. Whether you’re a job seeker or a recruiter, this portal has something for everyone!
 
-# Job Portal
-
-**Created by:** Arun.webcode
-
-## Live Demo
-
-You can access the live hosted version of the Job Portal [here](https://jobportal-live.onrender.com).
+# JGetHired
 
 ## Tech Stack
 
@@ -58,88 +52,4 @@ You can access the live hosted version of the Job Portal [here](https://jobporta
   - **Multer**: For handling file uploads.
   - **Nodemon**: For automatic server restarts during development.
   
-### Environment Variables
 
-Make sure to set up the following environment variables in your `.env` file:
-
-```
-MONGO_URI = ... 
-PORT = 8000 
-SECRET_KEY = ... 
-CLOUD_NAME = ... 
-API_KEY = ... 
-API_SECRET = ...
-```
-
-These variables are required for MongoDB database connections and Cloudinary configurations.
-
-## Functionality
-
-The Job Portal supports two types of accounts:
-
-1. **Student (Job Seekers)**:
-   - Create an account with an ID and password.
-   - Apply for jobs.
-   - Update profile information, including uploading profile pictures and resumes.
-   - View application status.
-   - Filter jobs based on various criteria.
-
-2. **Recruiter**:
-   - Create an account to post job listings.
-   - Create company accounts.
-   - View and manage job applications from candidates, accessing their details such as CV, phone number, email, and name.
-
-### Additional Features
-
-- **Theme Switching**: Users can toggle between dark and light themes.
-- **Protected Routes**: Ensures secure access to certain functionalities based on user authentication.
-
-## Installation Instructions
-
-To set up the project locally, follow these steps:
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Arun-webcode/Job-Potal-MERN-Stack.git
-   ```
-
-2. **Navigate to the project directory**:
-   ```bash
-   cd Job-Potal-MERN-Stack
-   ```
-
-3. **Install dependencies**:
-   For both the frontend and backend, run:
-   ```bash
-   npm install
-   ```
-
-4. **Create a `.env` file in the backend directory** and add the required environment variables as listed above.
-
-5. **Run the Backend**:
-   ```bash
-   npm run dev
-   ```
-
-6. **Navigate to the frontend directory**:
-   ```bash
-   cd frontend
-   ```
-
-7. **Run the Frontend**:
-   ```bash
-   npm run dev
-   ```
-
-8. **Build the Frontend for Deployment**:
-   When you're ready to deploy, run:
-   ```bash
-   npm run build
-   ```
-
----
-
-**Happy Coding!** Enjoy exploring and contributing to the Job Portal project. Let's build something amazing together! 🚀
-``` 
-
-Feel free to modify any part if you need further adjustments!
