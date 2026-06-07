@@ -137,10 +137,6 @@ To set up the project locally, follow these steps:
    npm run build
    ```
 
-## Local Development
-
-For a local version of the Job Portal, please visit the GitHub repository: [Job Portal MERN Stack](https://github.com/Arun-webcode/Job-Potal-MERN-Stack).
-
 ---
 
 **Happy Coding!** Enjoy exploring and contributing to the Job Portal project. Let's build something amazing together! 🚀
