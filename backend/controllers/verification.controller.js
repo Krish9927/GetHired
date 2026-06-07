@@ -6,7 +6,7 @@ import {
     calculateProfileCompleteness,
     isCollegeEmailAddress,
 } from "../utils/trustScore.js";
-import getDataUri from "../utils/dataUri.js";
+import getDataUri from "../utils/datauri.js";
 import cloudinary from "../utils/cloudinary.js";
 import crypto from "crypto";
 

@@ -2,7 +2,7 @@
 
 Happy coding! This project is a comprehensive learning experience designed to emulate a real-world job portal, complete with all the functionalities you’d expect from a professional platform. Whether you’re a job seeker or a recruiter, this portal has something for everyone!
 
-# JGetHired
+# GetHired
 
 ## Tech Stack
 
