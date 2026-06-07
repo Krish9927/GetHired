@@ -37,7 +37,9 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      // Don't throw a hard server-side error, just deny CORS headers (returns false)
+      // This prevents 500 errors on same-origin requests or unconfigured origins
+      callback(null, false);
     }
   },
   credentials: true,
@@ -55,23 +57,25 @@ app.use("/api/v1/company-verification", companyVerificationRoute);
 app.use("/api/v1/external-jobs", externalJobsRoute);
 
 // ── Serve Frontend (production) ───────────────────────────────────────────────
-const frontendDistPath = path.join(__dirname, "../Frontend/dist");
+if (process.env.NODE_ENV === "production") {
+  const frontendDistPath = path.join(__dirname, "../Frontend/dist");
 
-console.log("📁 Serving frontend from:", frontendDistPath);
+  console.log(" Serving frontend from:", frontendDistPath);
 
-app.use(express.static(frontendDistPath));
+  app.use(express.static(frontendDistPath));
 
-// Catch-all: send React app for any non-API route (must be after API routes)
-app.get("*", (req, res) => {
-  const indexPath = path.join(frontendDistPath, "index.html");
-  console.log("📄 Serving index.html from:", indexPath);
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error("❌ Error serving index.html:", err.message);
-      res.status(500).send("Frontend not found. Build may have failed.");
-    }
+  // Catch-all: send React app for any non-API route (must be after API routes)
+  app.get("*", (req, res) => {
+    const indexPath = path.join(frontendDistPath, "index.html");
+    console.log(" Serving index.html from:", indexPath);
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error(" Error serving index.html:", err.message);
+        res.status(500).send("Frontend not found. Build may have failed.");
+      }
+    });
   });
-});
+}
 
 // ── Start Server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
