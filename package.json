@@ -1,0 +1,13 @@
+{
+    "name": "gethired-job-portal",
+    "version": "1.0.0",
+    "description": "GetHired - Full Stack Job Portal",
+    "scripts": {
+        "build": "npm install --prefix Frontend && npm run build --prefix Frontend && npm install --prefix backend",
+        "start": "npm run start --prefix backend"
+    },
+    "engines": {
+        "node": ">=18.0.0",
+        "npm": ">=8.0.0"
+    }
+}
