@@ -20,5 +20,9 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    // Ensure assets use absolute paths
+    assetsDir: "assets",
   },
+  // Use relative base so assets load correctly from any subdomain/path
+  base: "/",
 });
