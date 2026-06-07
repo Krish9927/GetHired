@@ -1,13 +1,34 @@
 {
     "name": "gethired-job-portal",
     "version": "1.0.0",
-    "description": "GetHired - Full Stack Job Portal",
-    "scripts": {
-        "build": "npm install --prefix Frontend && npm run build --prefix Frontend && npm install --prefix backend",
-        "start": "npm run start --prefix backend"
-    },
+    "description": "GetHired — A full-stack MERN job portal with candidate verification, ATS scoring, and company trust system",
+    "author": "Krishna.developer",
+    "license": "MIT",
+    "type": "module",
     "engines": {
         "node": ">=18.0.0",
         "npm": ">=8.0.0"
+    },
+    "scripts": {
+        "dev:backend": "cd backend && nodemon index.js",
+        "dev:frontend": "cd Frontend && vite",
+        "build": "npm install --prefix Frontend && npm run build --prefix Frontend && npm install --prefix backend",
+        "start": "npm run start --prefix backend",
+        "install:all": "npm install --prefix Frontend && npm install --prefix backend"
+    },
+    "keywords": [
+        "job-portal",
+        "mern",
+        "react",
+        "nodejs",
+        "express",
+        "mongodb",
+        "gethired",
+        "candidate-verification",
+        "ats-scoring"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Krish9927/GetHired.git"
     }
 }
