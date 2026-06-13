@@ -10,3 +10,4 @@ export const COMPANY_API_END_POINT = `${BASE_URL}/api/v1/company`;
 export const VERIFICATION_API_END_POINT = `${BASE_URL}/api/v1/verification`;
 export const COMPANY_VERIFICATION_API_END_POINT = `${BASE_URL}/api/v1/company-verification`;
 export const EXTERNAL_JOBS_API_END_POINT = `${BASE_URL}/api/v1/external-jobs`;
+export const CHAT_API_END_POINT = `${BASE_URL}/api/v1/chat`;

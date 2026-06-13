@@ -12,6 +12,8 @@ import applicationRoute from "./routes/application.route.js";
 import verificationRoute from "./routes/verification.route.js";
 import companyVerificationRoute from "./routes/companyVerification.route.js";
 import externalJobsRoute from "./routes/externalJobs.route.js";
+import chatRoute from "./routes/chat.route.js";
+import { isAIEnabled } from "./utils/aiChatbot.js";
 
 dotenv.config({});
 
@@ -55,6 +57,7 @@ app.use("/api/v1/application", applicationRoute);
 app.use("/api/v1/verification", verificationRoute);
 app.use("/api/v1/company-verification", companyVerificationRoute);
 app.use("/api/v1/external-jobs", externalJobsRoute);
+app.use("/api/v1/chat", chatRoute);
 
 // ── Serve Frontend (production) ───────────────────────────────────────────────
 if (process.env.NODE_ENV === "production") {
@@ -80,5 +83,13 @@ if (process.env.NODE_ENV === "production") {
 // ── Start Server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   connectDB();
-  console.log(`✅ Server running at port ${PORT}`);
+  console.log(`Server running at port ${PORT}`);
+  if (isAIEnabled()) {
+    const provider = process.env.AI_PROVIDER === "openai" && process.env.OPENAI_API_KEY?.trim()
+      ? "OpenAI"
+      : "Gemini";
+    console.log(`AI chatbot enabled (${provider})`);
+  } else {
+    console.warn("AI chatbot disabled — add GEMINI_API_KEY to backend/.env and restart");
+  }
 });

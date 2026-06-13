@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import Login from "./components/auth/Login";
 import Signup from "./components/auth/Signup";
 import Home from "./components/Home";
@@ -15,8 +15,19 @@ import Applicants from "./components/admin/Applicants";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import AdminPanel from "./components/admin/AdminPanel";
 import ForgotPassword from "./components/auth/ForgotPassword";
+import Chatbot from "./components/Chatbot";
+
+const RootLayout = () => (
+  <>
+    <Outlet />
+    <Chatbot />
+  </>
+);
 
 const appRouter = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [
   {
     path: "/",
     element: <Home />,
@@ -105,6 +116,8 @@ const appRouter = createBrowserRouter([
         <AdminPanel />
       </ProtectedRoute>
     ),
+  },
+    ],
   },
 ]);
 function App() {
