@@ -32,7 +32,13 @@ const ApplicantsTable = () => {
       );
       console.log(res);
       if (res.data.success) {
-        toast.success(res.data.message);
+        if (res.data.emailSent) {
+          toast.success(res.data.message);
+        } else if (status.toLowerCase() === "accepted") {
+          toast.warning(res.data.message);
+        } else {
+          toast.success(res.data.message);
+        }
       }
     } catch (error) {
       toast.error(error.response.data.message);

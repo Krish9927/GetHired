@@ -1,5 +1,6 @@
 import { Application } from "../models/application.model.js";
 import { Job } from "../models/job.model.js";
+import { sendApplicationAcceptedEmail } from "../utils/mailer.js";
 
 export const applyJob = async (req, res) => {
   try {
@@ -122,8 +123,14 @@ export const updateStatus = async (req, res) => {
       });
     }
 
-    // find the application by application id
-    const application = await Application.findOne({ _id: applicationId });
+    const application = await Application.findById(applicationId).populate({
+      path: "applicant",
+      select: "fullname email",
+    }).populate({
+      path: "job",
+      select: "title",
+      populate: { path: "company", select: "name" },
+    });
 
     if (!application) {
       return res.status(404).json({
@@ -132,16 +139,41 @@ export const updateStatus = async (req, res) => {
       });
     }
 
-    // update the status
-    application.status = status.toLowerCase();
+    const newStatus = status.toLowerCase();
+    let emailSent = false;
 
+    application.status = newStatus;
     await application.save();
 
+    if (newStatus === "accepted") {
+      const { applicant, job } = application;
+
+      if (!applicant?.email) {
+        console.warn(`⚠️ No applicant email for application ${applicationId}`);
+      } else {
+        emailSent = await sendApplicationAcceptedEmail(
+          applicant.email,
+          applicant.fullname,
+          job?.title || "the role",
+          job?.company?.name || "the company"
+        );
+      }
+    }
+
     return res.status(200).json({
-      message: "Status updated successfully.",
+      message: newStatus === "accepted"
+        ? emailSent
+          ? `Applicant selected. Email sent to ${application.applicant?.email}.`
+          : "Applicant selected, but the notification email could not be sent. Check server logs."
+        : "Status updated successfully.",
       success: true,
+      emailSent,
     });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({
+      message: "Server error",
+      success: false,
+    });
   }
 };
