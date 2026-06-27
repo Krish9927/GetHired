@@ -60,25 +60,20 @@ app.use("/api/v1/external-jobs", externalJobsRoute);
 app.use("/api/v1/chat", chatRoute);
 
 // ── Serve Frontend (production) ───────────────────────────────────────────────
-if (process.env.NODE_ENV === "production") {
-  const frontendDistPath = path.join(__dirname, "../Frontend/dist");
+const frontendDistPath = path.join(__dirname, "../Frontend/dist");
+console.log("📁 Serving frontend from:", frontendDistPath);
+app.use(express.static(frontendDistPath));
 
-  console.log(" Serving frontend from:", frontendDistPath);
-
-  app.use(express.static(frontendDistPath));
-
-  // Catch-all: send React app for any non-API route (must be after API routes)
-  app.get("*", (req, res) => {
-    const indexPath = path.join(frontendDistPath, "index.html");
-    console.log(" Serving index.html from:", indexPath);
-    res.sendFile(indexPath, (err) => {
-      if (err) {
-        console.error(" Error serving index.html:", err.message);
-        res.status(500).send("Frontend not found. Build may have failed.");
-      }
-    });
+// Catch-all: send React app for any non-API route (must be after API routes)
+app.get("*", (req, res) => {
+  const indexPath = path.join(frontendDistPath, "index.html");
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error("❌ Error serving index.html:", err.message);
+      res.status(500).send(`Frontend not found at: ${indexPath}`);
+    }
   });
-}
+});
 
 // ── Start Server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
