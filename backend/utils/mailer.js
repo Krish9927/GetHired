@@ -129,14 +129,14 @@ const welcomeEmailContent = (fullname, email, role) => {
   const roleLabel = role === "student" ? "Candidate" : "Recruiter";
   const steps = role === "student"
     ? [
-        ["Complete email verification", "Verify your account from Profile → Verification"],
-        ["Build your professional profile", "Upload your resume, add skills, and improve your ATS score"],
-        ["Discover and apply for roles", "Browse verified jobs and track applications in one place"],
-      ]
+      ["Complete email verification", "Verify your account from Profile → Verification"],
+      ["Build your professional profile", "Upload your resume, add skills, and improve your ATS score"],
+      ["Discover and apply for roles", "Browse verified jobs and track applications in one place"],
+    ]
     : [
-        ["Register your organization", "Add company details and complete verification"],
-        ["Publish job openings", "Reach qualified, verified candidates on ${BRAND_NAME}"],
-      ];
+      ["Register your organization", "Add company details and complete verification"],
+      ["Publish job openings", "Reach qualified, verified candidates on ${BRAND_NAME}"],
+    ];
 
   const stepsHtml = steps.map(([title, desc], i) => `
     <tr>
@@ -353,5 +353,76 @@ export const sendForgotPasswordEmail = async (to, otp, fullname) => {
     console.error(`❌ Failed to send forgot password email:`, error.message);
     console.log(`\n📧 Dev fallback reset OTP for ${to}: ${otp}\n`);
     throw error;
+  }
+};
+
+// ── Send Test Invite Email ────────────────────────────────────────────────────
+export const sendTestInviteEmail = async (to, fullname, { testTitle, duration, minimumScore, testId }) => {
+  try {
+    const transporter = createTransporter();
+    const content = `
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr><td style="padding:40px 40px 32px;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="display:inline-block;background:#f0ebff;border-radius:50%;padding:16px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="#6A38C2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="#6A38C2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1a2e;text-align:center;">You're Invited to a Test!</h2>
+    <p style="margin:0 0 20px;font-size:14px;color:#6b7280;text-align:center;">Hi <strong>${fullname}</strong>, you have been invited to take the assessment for a job you applied to.</p>
+    <div style="background:#f0ebff;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0 0 8px;font-size:14px;"><strong>Test:</strong> ${testTitle}</p>
+      <p style="margin:0 0 8px;font-size:14px;"><strong>Duration:</strong> ${duration} minutes</p>
+      <p style="margin:0;font-size:14px;"><strong>Minimum Score to Qualify:</strong> ${minimumScore}%</p>
+    </div>
+    <div style="text-align:center;">
+      <a href="${process.env.CLIENT_URL || "http://localhost:5173"}/test/${testId}" style="display:inline-block;background:#6A38C2;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 36px;border-radius:8px;">Take Test Now →</a>
+    </div>
+  </td></tr>
+</table>`;
+    await transporter.sendMail({
+      from: `"GetHired" <${process.env.EMAIL_USER}>`,
+      to,
+      subject: `Test Invitation: ${testTitle}`,
+      html: emailWrapper(content),
+    });
+    console.log(`✅ Test invite sent to ${to}`);
+  } catch (err) {
+    console.error(`❌ Test invite failed:`, err.message);
+  }
+};
+
+// ── Send Test Result Email ────────────────────────────────────────────────────
+export const sendTestResultEmail = async (to, fullname, { testTitle, score, correctCount, totalQuestions, minimumScore, qualified, rank }) => {
+  try {
+    const transporter = createTransporter();
+    const color = qualified ? "#16a34a" : "#dc2626";
+    const emoji = qualified ? "🎉" : "📊";
+    const content = `
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr><td style="padding:40px 40px 32px;">
+    <div style="text-align:center;margin-bottom:20px;font-size:48px;">${emoji}</div>
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1a2e;text-align:center;">${qualified ? "You Qualified!" : "Test Completed"}</h2>
+    <p style="margin:0 0 24px;font-size:14px;color:#6b7280;text-align:center;">Hi <strong>${fullname}</strong>, here are your results for <strong>${testTitle}</strong>.</p>
+    <div style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:40px;font-weight:800;color:${color};">${score}%</p>
+      <p style="margin:0;font-size:13px;color:#6b7280;">${correctCount} / ${totalQuestions} correct · Minimum: ${minimumScore}%</p>
+      ${rank ? `<p style="margin:8px 0 0;font-size:13px;color:#6b7280;">Your Rank: <strong>#${rank}</strong></p>` : ""}
+    </div>
+    ${qualified
+        ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 16px;text-align:center;"><p style="margin:0;font-size:13px;color:#15803d;">✅ Congratulations! You have met the qualifying score. The recruiter will be in touch soon.</p></div>`
+        : `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;text-align:center;"><p style="margin:0;font-size:13px;color:#dc2626;">You did not meet the minimum score of ${minimumScore}%. Keep improving and try again!</p></div>`
+      }
+  </td></tr>
+</table>`;
+    await transporter.sendMail({
+      from: `"GetHired" <${process.env.EMAIL_USER}>`,
+      to,
+      subject: qualified ? `🎉 You Qualified: ${testTitle}` : `Your Results: ${testTitle}`,
+      html: emailWrapper(content),
+    });
+    console.log(`✅ Test result sent to ${to}`);
+  } catch (err) {
+    console.error(`❌ Test result email failed:`, err.message);
   }
 };

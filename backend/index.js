@@ -13,7 +13,8 @@ import verificationRoute from "./routes/verification.route.js";
 import companyVerificationRoute from "./routes/companyVerification.route.js";
 import externalJobsRoute from "./routes/externalJobs.route.js";
 import chatRoute from "./routes/chat.route.js";
-import { isAIEnabled } from "./utils/aiChatbot.js";
+import testRoute from "./routes/test.route.js";
+import { seedQuestions } from "./controllers/test.controller.js";
 
 dotenv.config({});
 
@@ -35,12 +36,9 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, Render health checks)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      // Don't throw a hard server-side error, just deny CORS headers (returns false)
-      // This prevents 500 errors on same-origin requests or unconfigured origins
       callback(null, false);
     }
   },
@@ -58,18 +56,16 @@ app.use("/api/v1/verification", verificationRoute);
 app.use("/api/v1/company-verification", companyVerificationRoute);
 app.use("/api/v1/external-jobs", externalJobsRoute);
 app.use("/api/v1/chat", chatRoute);
+app.use("/api/v1/test", testRoute);
 
 // ── Serve Frontend (production) ───────────────────────────────────────────────
 const frontendDistPath = path.join(__dirname, "../Frontend/dist");
-console.log("📁 Serving frontend from:", frontendDistPath);
 app.use(express.static(frontendDistPath));
 
-// Catch-all: send React app for any non-API route (must be after API routes)
 app.get("*", (req, res) => {
   const indexPath = path.join(frontendDistPath, "index.html");
   res.sendFile(indexPath, (err) => {
     if (err) {
-      console.error("❌ Error serving index.html:", err.message);
       res.status(500).send(`Frontend not found at: ${indexPath}`);
     }
   });
@@ -77,14 +73,6 @@ app.get("*", (req, res) => {
 
 // ── Start Server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  connectDB();
-  console.log(`Server running at port ${PORT}`);
-  if (isAIEnabled()) {
-    const provider = process.env.AI_PROVIDER === "openai" && process.env.OPENAI_API_KEY?.trim()
-      ? "OpenAI"
-      : "Gemini";
-    console.log(`AI chatbot enabled (${provider})`);
-  } else {
-    console.warn("AI chatbot disabled — add GEMINI_API_KEY to backend/.env and restart");
-  }
+  connectDB().then(() => seedQuestions());
+  console.log(`✅ Server running at port ${PORT}`);
 });

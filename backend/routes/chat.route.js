@@ -1,10 +1,9 @@
 import express from "express";
-import optionalAuth from "../middlewares/optionalAuth.js";
-import { getChatWelcome, sendChatMessage } from "../controllers/chat.controller.js";
+import { getWelcome, sendMessage } from "../controllers/chat.controller.js";
 
 const router = express.Router();
 
-router.route("/welcome").get(optionalAuth, getChatWelcome);
-router.route("/message").post(optionalAuth, sendChatMessage);
+router.get("/welcome", getWelcome);
+router.post("/message", sendMessage);
 
 export default router;
