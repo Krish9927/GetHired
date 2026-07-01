@@ -8,23 +8,24 @@ import { Badge } from "../ui/badge";
 import axios from "axios";
 import { TEST_API_END_POINT } from "@/utils/constant";
 import { toast } from "sonner";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Loader2, ClipboardList } from "lucide-react";
 
 const CreateTest = () => {
     const { jobId } = useParams();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [loading, setLoading] = useState(false);
     const [topics, setTopics] = useState([]);
     const [bankQuestions, setBankQuestions] = useState([]);
     const [selectedTopic, setSelectedTopic] = useState("");
 
     const [form, setForm] = useState({
-        title: "",
-        description: "",
-        durationMinutes: 30,
-        minimumScore: 60,
-        scheduledAt: "",
+        title: searchParams.get("title") || "",
+        description: searchParams.get("description") || "",
+        durationMinutes: searchParams.get("durationMinutes") || 30,
+        minimumScore: searchParams.get("minimumScore") || 60,
+        scheduledAt: searchParams.get("scheduledAt") || "",
         autoSelectCount: 5,
         selectedTopics: [],
         customQuestionIds: [],

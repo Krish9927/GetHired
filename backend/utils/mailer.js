@@ -357,9 +357,19 @@ export const sendForgotPasswordEmail = async (to, otp, fullname) => {
 };
 
 // ── Send Test Invite Email ────────────────────────────────────────────────────
-export const sendTestInviteEmail = async (to, fullname, { testTitle, duration, minimumScore, testId }) => {
+export const sendTestInviteEmail = async (to, fullname, { testTitle, duration, minimumScore, testId, scheduledAt }) => {
   try {
     const transporter = createTransporter();
+    const dateStr = scheduledAt ? new Date(scheduledAt).toLocaleString("en-IN", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }) : "TBD";
+
     const content = `
 <table width="100%" cellpadding="0" cellspacing="0">
   <tr><td style="padding:40px 40px 32px;">
@@ -373,10 +383,11 @@ export const sendTestInviteEmail = async (to, fullname, { testTitle, duration, m
     <div style="background:#f0ebff;border-radius:12px;padding:20px;margin-bottom:24px;">
       <p style="margin:0 0 8px;font-size:14px;"><strong>Test:</strong> ${testTitle}</p>
       <p style="margin:0 0 8px;font-size:14px;"><strong>Duration:</strong> ${duration} minutes</p>
-      <p style="margin:0;font-size:14px;"><strong>Minimum Score to Qualify:</strong> ${minimumScore}%</p>
+      <p style="margin:0 0 8px;font-size:14px;"><strong>Minimum Score to Qualify:</strong> ${minimumScore}%</p>
+      <p style="margin:0;font-size:14px;"><strong>Scheduled Time:</strong> ${dateStr} (Conducted at this specific time)</p>
     </div>
     <div style="text-align:center;">
-      <a href="${process.env.CLIENT_URL || "http://localhost:5173"}/test/${testId}" style="display:inline-block;background:#6A38C2;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 36px;border-radius:8px;">Take Test Now →</a>
+      <a href="${process.env.CLIENT_URL || "http://localhost:5173"}${testId ? `/test/${testId}` : '/profile'}" style="display:inline-block;background:#6A38C2;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 36px;border-radius:8px;">Take Test Now →</a>
     </div>
   </td></tr>
 </table>`;

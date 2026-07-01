@@ -43,6 +43,26 @@ const AppliedJobTable = () => {
     });
   };
 
+  const isTestWindowOpen = (test) => {
+    if (test.status === "active") return true;
+    if (test.status === "scheduled" && test.scheduledAt) {
+      const now = new Date();
+      const schedTime = new Date(test.scheduledAt);
+      const endTime = new Date(schedTime.getTime() + (test.durationMinutes || 30) * 60 * 1000);
+      return now >= schedTime && now <= endTime;
+    }
+    return false;
+  };
+
+  const isTestMissed = (test) => {
+    if (test.status === "scheduled" && test.scheduledAt) {
+      const now = new Date();
+      const endTime = new Date(new Date(test.scheduledAt).getTime() + (test.durationMinutes || 30) * 60 * 1000);
+      return now > endTime;
+    }
+    return false;
+  };
+
   return (
     <div className="dark:bg-gray-900">
       <Table>
@@ -99,7 +119,7 @@ const AppliedJobTable = () => {
                           <AlertCircle className="w-3 h-3" />
                           {test.durationMinutes} min · Min {test.minimumScore}% to qualify
                         </div>
-                        {test.status === "active" && (
+                        {isTestWindowOpen(test) ? (
                           <Button
                             size="sm"
                             className="h-7 text-xs bg-[#6A38C2] hover:bg-[#5b30a6] mt-1"
@@ -107,10 +127,11 @@ const AppliedJobTable = () => {
                           >
                             Take Test →
                           </Button>
-                        )}
-                        {test.status === "scheduled" && (
-                          <Badge className="bg-blue-100 text-blue-700 text-xs">Scheduled</Badge>
-                        )}
+                        ) : isTestMissed(test) ? (
+                          <Badge className="bg-red-100 text-red-700 text-xs mt-1">Closed / Missed</Badge>
+                        ) : test.status === "scheduled" ? (
+                          <Badge className="bg-blue-100 text-blue-700 text-xs mt-1">Scheduled</Badge>
+                        ) : null}
                       </div>
                     ) : (
                       <span className="text-xs text-gray-300">—</span>

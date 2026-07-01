@@ -14,6 +14,7 @@ import PostJob from "./components/admin/PostJob";
 import Applicants from "./components/admin/Applicants";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
 import AdminPanel from "./components/admin/AdminPanel";
+import SelectedCandidates from "./pages/SelectedCandidates.jsx";
 import ForgotPassword from "./components/auth/ForgotPassword";
 import Chatbot from "./components/Chatbot";
 import CreateTest from "./components/admin/CreateTest";
@@ -58,6 +59,10 @@ const appRouter = createBrowserRouter([
       {
         path: "/browse",
         element: <Browse />,
+      },
+      {
+        path: "/selected-candidates",
+        element: <SelectedCandidates />,
       },
       {
         path: "/profile",

@@ -75,7 +75,7 @@ export const createTest = async (req, res) => {
             durationMinutes: durationMinutes || 30,
             minimumScore: minimumScore || 60,
             scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-            status: "draft",
+            status: scheduledAt ? "scheduled" : "draft",
             topics: topics || [],
             autoSelectCount: autoSelectCount || 0,
         });
@@ -132,7 +132,26 @@ export const getTestForCandidate = async (req, res) => {
             .populate("job", "title");
 
         if (!test) return res.status(404).json({ message: "Test not found", success: false });
-        if (test.status !== "active") return res.status(400).json({ message: "Test is not active", success: false });
+
+        const now = new Date();
+        let canTake = false;
+        if (test.status === "active") {
+            canTake = true;
+        } else if (test.status === "scheduled" && test.scheduledAt) {
+            const schedTime = new Date(test.scheduledAt);
+            const endTime = new Date(schedTime.getTime() + (test.durationMinutes || 30) * 60 * 1000);
+            if (now >= schedTime && now <= endTime) {
+                canTake = true;
+            } else if (now < schedTime) {
+                return res.status(400).json({ message: `Test has not started yet. It is scheduled for ${schedTime.toLocaleString("en-IN")}`, success: false });
+            } else {
+                return res.status(400).json({ message: "Test window has closed", success: false });
+            }
+        }
+
+        if (!canTake) {
+            return res.status(400).json({ message: "Test is not active or available at this time", success: false });
+        }
 
         // Check if already submitted
         const existing = await TestSubmission.findOne({ test: testId, candidate: req.id });
@@ -153,7 +172,22 @@ export const submitTest = async (req, res) => {
 
         const test = await Test.findById(testId).populate("questions");
         if (!test) return res.status(404).json({ message: "Test not found", success: false });
-        if (test.status !== "active") return res.status(400).json({ message: "Test is not active", success: false });
+
+        const now = new Date();
+        let canSubmit = false;
+        if (test.status === "active") {
+            canSubmit = true;
+        } else if (test.status === "scheduled" && test.scheduledAt) {
+            const schedTime = new Date(test.scheduledAt);
+            const endTime = new Date(schedTime.getTime() + ((test.durationMinutes || 30) + 5) * 60 * 1000); // 5 mins grace
+            if (now >= schedTime && now <= endTime) {
+                canSubmit = true;
+            }
+        }
+
+        if (!canSubmit) {
+            return res.status(400).json({ message: "Test window has closed or test is not active", success: false });
+        }
 
         const existing = await TestSubmission.findOne({ test: testId, candidate: req.id });
         if (existing) return res.status(400).json({ message: "Already submitted", success: false });
@@ -201,16 +235,6 @@ export const submitTest = async (req, res) => {
                     application?.job?.title || test.title,
                     application?.job?.company?.name || "the company"
                 ).catch(() => { });
-
-                // Send test result with score
-                sendTestResultEmail(user.email, user.fullname, {
-                    testTitle: test.title,
-                    score,
-                    correctCount,
-                    totalQuestions: test.questions.length,
-                    minimumScore: test.minimumScore,
-                    qualified,
-                }).catch(() => { });
             }
         }
 

@@ -1,6 +1,7 @@
 import { Job } from "../models/job.model.js";
 import { Company } from "../models/company.model.js";
 import { detectScamPhrases } from "../utils/companyTrustScore.js";
+import { Application } from "../models/application.model.js";
 
 // admin post karega job
 export const postJob = async (req, res) => {
@@ -16,6 +17,11 @@ export const postJob = async (req, res) => {
       position,
       companyId,
       minimumCgpa,
+      hasTest,
+      testDescription,
+      testDate,
+      testDuration,
+      testMinimumScore,
     } = req.body;
     const userId = req.id;
 
@@ -72,6 +78,11 @@ export const postJob = async (req, res) => {
       isSuspicious,
       suspiciousReasons: scamMatches,
       jobStatus,
+      hasTest: hasTest === "true" || hasTest === true,
+      testDescription: testDescription || "",
+      testDate: testDate ? new Date(testDate) : null,
+      testDuration: testDuration ? Number(testDuration) : 30,
+      testMinimumScore: testMinimumScore ? Number(testMinimumScore) : 60,
     });
 
     return res.status(201).json({
@@ -88,11 +99,21 @@ export const postJob = async (req, res) => {
 export const getAllJobs = async (req, res) => {
   try {
     const keyword = req.query.keyword || "";
+    const now = new Date();
     const query = {
       jobStatus: "active",
       $or: [
         { title: { $regex: keyword, $options: "i" } },
         { description: { $regex: keyword, $options: "i" } },
+      ],
+      $and: [
+        {
+          $or: [
+            { hasTest: { $ne: true } },
+            { testDate: { $gt: now } },
+            { testDate: null },
+          ],
+        },
       ],
     };
     const jobs = await Job.find(query)
@@ -121,9 +142,12 @@ export const getAllJobs = async (req, res) => {
 export const getJobById = async (req, res) => {
   try {
     const jobId = req.params.id;
-    const job = await Job.findById(jobId).populate({
-      path: "applications",
-    });
+    const job = await Job.findById(jobId)
+      .populate({ path: "applications" })
+      .populate({
+        path: "company",
+        select: "name logo description website location trustScore verificationStatus isVerified linkedinUrl",
+      });
 
     if (!job) {
       return res.status(404).json({
@@ -161,5 +185,25 @@ export const getAdminJobs = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+  }
+};
+
+// ─── Get selected candidates for a company ────────────────────────────────────────
+export const getSelectedCandidates = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    // Find jobs belonging to the company
+    const jobs = await Job.find({ company: companyId }).select('_id');
+    const jobIds = jobs.map(j => j._id);
+    const selectedApplications = await Application.find({
+      job: { $in: jobIds },
+      status: 'accepted',
+    })
+      .populate({ path: 'applicant', select: 'fullname email profile.profilePhoto' })
+      .populate({ path: 'job', select: 'title' });
+    return res.status(200).json({ success: true, candidates: selectedApplications });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Server error', success: false });
   }
 };

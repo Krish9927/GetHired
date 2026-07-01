@@ -34,11 +34,11 @@ const Navbar = () => {
   return (
     <div>
       <div className="flex items-center justify-between mx-auto max-w-7xl h-16">
-        <div>
+        <Link to="/" className="cursor-pointer">
           <h1 className="text-2xl font-bold">
             Get<span className="text-[#F83002]">Hired</span>
           </h1>
-        </div>
+        </Link>
         <div className="flex items-center gap-12">
           <ul className="flex font-medium items-center gap-5 dark:text-white">
             {user && user.role === "recruiter" ? (
@@ -48,6 +48,9 @@ const Navbar = () => {
                 </li>
                 <li>
                   <Link to="/admin/jobs">Jobs</Link>
+                </li>
+                <li>
+                  <Link to="/selected-candidates">Selected Candidates</Link>
                 </li>
               </>
             ) : user && user.role === "student" ? (
