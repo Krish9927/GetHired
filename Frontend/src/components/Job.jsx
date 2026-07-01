@@ -36,10 +36,25 @@ const Job = ({ job }) => {
           </Avatar>
         </Button>
         <div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <h1 className="font-medium text-lg">{job?.company?.name}</h1>
             {job?.company?.isVerified && (
               <ShieldCheck className="w-4 h-4 text-green-500" title="Verified Company" />
+            )}
+            {job?.company?.trustScore != null && (
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold leading-none ${
+                  job.company.trustScore >= 60
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                    : job.company.trustScore >= 30
+                      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                }`}
+                title="Company Trust Score"
+              >
+                <ShieldCheck className="w-3 h-3" />
+                {job.company.trustScore}
+              </span>
             )}
           </div>
           <p className="text-sm dark:text-gray-400 text-gray-500">

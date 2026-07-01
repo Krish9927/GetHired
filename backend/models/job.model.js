@@ -62,6 +62,25 @@ const jobSchema = new mongoose.Schema(
       enum: ["active", "under_review", "rejected"],
       default: "active",
     },
+    hasTest: {
+      type: Boolean,
+      default: false,
+    },
+    testDescription: {
+      type: String,
+      default: "",
+    },
+    testDate: {
+      type: Date,
+    },
+    testDuration: {
+      type: Number,
+      default: 30,
+    },
+    testMinimumScore: {
+      type: Number,
+      default: 60,
+    },
   },
   { timestamps: true }
 );

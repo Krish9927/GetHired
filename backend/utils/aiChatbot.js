@@ -112,7 +112,7 @@ const callOpenAI = async (systemPrompt, history, message) => {
 
 const callGemini = async (systemPrompt, history, message) => {
     const apiKey = process.env.GEMINI_API_KEY?.trim();
-    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
     const contents = [
         ...formatHistoryForGemini(history),
