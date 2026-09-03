@@ -1,6 +1,6 @@
 import { Application } from "../models/application.model.js";
 import { Job } from "../models/job.model.js";
-import { User } from "../models/user.model.js";
+import { Student } from "../models/student.model.js";
 import { Test } from "../models/test.model.js";
 import { sendApplicationAcceptedEmail, sendTestInviteEmail } from "../utils/mailer.js";
 
@@ -39,7 +39,7 @@ export const applyJob = async (req, res) => {
     }
 
     // check if the user meets all eligibility requirements
-    const user = await User.findById(userId);
+    const user = await Student.findById(userId);
     if (!user) {
       return res.status(404).json({
         message: "User not found",
@@ -63,7 +63,7 @@ export const applyJob = async (req, res) => {
       const missingSkills = job.requirements
         .map((r) => r.trim())
         .filter((r) => r && !userSkills.includes(r.toLowerCase()));
-      
+
       if (missingSkills.length > 0) {
         return res.status(400).json({
           message: `Eligibility check failed: Missing required skill(s): ${missingSkills.join(", ")}`,

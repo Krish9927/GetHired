@@ -1,7 +1,7 @@
 import { Job } from "../models/job.model.js";
 import { Company } from "../models/company.model.js";
-import { detectScamPhrases } from "../utils/companyTrustScore.js";
 import { Application } from "../models/application.model.js";
+import { detectFakeJob } from "../utils/fakeJobDetector.js";
 
 // admin post karega job
 export const postJob = async (req, res) => {
@@ -52,14 +52,44 @@ export const postJob = async (req, res) => {
 
     const experienceValue = isNaN(Number(experience)) ? String(experience) : Number(experience);
 
-    // Fake job detection
-    const textToScan = `${title} ${description} ${requirements}`;
-    const scamMatches = detectScamPhrases(textToScan);
-    const isSuspicious = scamMatches.length > 0;
-
-    // Check if company is verified — unverified companies can't post publicly
+    // Look up company first — needed for companyName in AI prompt
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ message: "Company not found.", success: false });
+
+    // ── Company must be approved by admin before posting jobs ───────────────
+    if (company.verificationStatus !== "approved") {
+      const messages = {
+        pending: "Your company is pending admin approval. You can post jobs once it is approved.",
+        rejected: "Your company registration was rejected. Please contact support or update your company details.",
+        banned: "Your company has been banned from the platform.",
+      };
+      return res.status(403).json({
+        message: messages[company.verificationStatus] || "Company not approved.",
+        verificationStatus: company.verificationStatus,
+        success: false,
+      });
+    }
+
+    // ── Hybrid fake-job detection ────────────────────────────────────────────
+    // Tier 1: hard scam phrases → instant flag (no API call)
+    // Tier 2: soft signals below threshold → skip AI, mark safe
+    // Tier 3: borderline soft score → call Gemini for semantic verdict
+    const detection = await detectFakeJob({
+      title,
+      description,
+      requirements,
+      salary: parsedSalary,
+      companyName: company.name,
+      location,
+      jobType,
+      experience,
+    });
+
+    const { isSuspicious, suspiciousReasons, aiConfidenceScore, aiVerdict, detectionMethod } = detection;
+
+    if (detectionMethod === "ai" || detectionMethod === "hybrid") {
+      console.log(`[FakeJobDetector] Gemini verdict for "${title}": ${aiVerdict} (score: ${aiConfidenceScore})`);
+    }
 
     const jobStatus = isSuspicious ? "under_review" : "active";
 
@@ -76,8 +106,11 @@ export const postJob = async (req, res) => {
       created_by: userId,
       minimumCgpa: minimumCgpa ? parseFloat(minimumCgpa) : 0,
       isSuspicious,
-      suspiciousReasons: scamMatches,
+      suspiciousReasons,
       jobStatus,
+      aiConfidenceScore,
+      aiVerdict,
+      detectionMethod,
       hasTest: hasTest === "true" || hasTest === true,
       testDescription: testDescription || "",
       testDate: testDate ? new Date(testDate) : null,
@@ -88,6 +121,8 @@ export const postJob = async (req, res) => {
     return res.status(201).json({
       message: "New job created successfuly.",
       job,
+      isSuspicious,
+      detectionMethod,
       success: true,
     });
   } catch (error) {

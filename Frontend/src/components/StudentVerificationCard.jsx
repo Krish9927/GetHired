@@ -11,7 +11,8 @@ import { Label } from "./ui/label";
 import {
     ShieldCheck, ShieldAlert, GraduationCap, FileText,
     Github, Linkedin, Star, AlertCircle, CheckCircle2,
-    XCircle, Loader2, RefreshCw, Mail,
+    XCircle, Loader2, RefreshCw, Mail, Sparkles, TrendingUp,
+    TrendingDown, Lightbulb, Tag, BadgeCheck, User,
 } from "lucide-react";
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -107,7 +108,185 @@ const OtpSection = ({ userEmail, onVerified }) => {
     );
 };
 
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── AI ATS Feedback Panel ─────────────────────────────────────────────────────
+const AiAtsFeedbackPanel = ({ feedback, atsScore }) => {
+    if (!feedback || feedback.source === "keyword_fallback") return null;
+
+    const levelColors = {
+        fresher: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+        junior: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
+        mid: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+        senior: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
+        unknown: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+    };
+
+    return (
+        <div className="p-5 bg-white dark:bg-gray-900 border border-[#6A38C2]/30 dark:border-[#6A38C2]/20 rounded-2xl space-y-5">
+            {/* Header */}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#6A38C2]" />
+                    <h3 className="font-semibold text-gray-900 dark:text-white">AI Resume Analysis</h3>
+                    <span className="text-xs text-gray-400 font-normal">(powered by Gemini)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    {/* Level badge */}
+                    {feedback.levelDetected && feedback.levelDetected !== "unknown" && (
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${levelColors[feedback.levelDetected] || levelColors.unknown}`}>
+                            <User className="w-3 h-3 inline mr-1" />
+                            {feedback.levelDetected}
+                        </span>
+                    )}
+                    {/* Score breakdown badge */}
+                    <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-full">
+                        AI: {feedback.aiScore ?? "—"} · KW: {feedback.keywordScore ?? "—"} · Final: {atsScore}
+                    </span>
+                </div>
+            </div>
+
+            {/* Summary */}
+            {feedback.summary && (
+                <p className="text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/60 rounded-xl px-4 py-3 leading-relaxed border border-gray-100 dark:border-gray-700">
+                    {feedback.summary}
+                </p>
+            )}
+
+            {/* Strengths + Gaps side by side */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Strengths */}
+                {feedback.strengths?.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
+                            <TrendingUp className="w-3.5 h-3.5" /> Strengths
+                        </p>
+                        <ul className="space-y-1.5">
+                            {feedback.strengths.map((s, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                                    {s}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {/* Gaps */}
+                {feedback.gaps?.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-red-500 dark:text-red-400 uppercase tracking-wider">
+                            <TrendingDown className="w-3.5 h-3.5" /> Gaps
+                        </p>
+                        <ul className="space-y-1.5">
+                            {feedback.gaps.map((g, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                                    {g}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+
+            {/* Suggestions */}
+            {feedback.suggestions?.length > 0 && (
+                <div className="space-y-2">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold text-[#6A38C2] uppercase tracking-wider">
+                        <Lightbulb className="w-3.5 h-3.5" /> Suggestions
+                    </p>
+                    <ul className="space-y-1.5">
+                        {feedback.suggestions.map((s, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                <span className="w-5 h-5 rounded-full bg-[#6A38C2]/10 text-[#6A38C2] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                    {i + 1}
+                                </span>
+                                {s}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {/* Keywords */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Found */}
+                {feedback.keywordsFound?.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
+                            <Tag className="w-3.5 h-3.5" /> Keywords Found
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {feedback.keywordsFound.map((k, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
+                                    {k}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Missing */}
+                {feedback.keywordsMissing?.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-red-500 dark:text-red-400 uppercase tracking-wider">
+                            <Tag className="w-3.5 h-3.5" /> Keywords Missing
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {feedback.keywordsMissing.map((k, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 border border-red-200 dark:border-red-800">
+                                    {k}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Sections */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {feedback.sectionsFound?.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
+                            <BadgeCheck className="w-3.5 h-3.5" /> Sections Found
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {feedback.sectionsFound.map((s, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800">
+                                    {s}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {feedback.sectionsMissing?.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-red-500 dark:text-red-400 uppercase tracking-wider">
+                            <AlertCircle className="w-3.5 h-3.5" /> Sections Missing
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {feedback.sectionsMissing.map((s, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 border border-red-200 dark:border-red-800">
+                                    {s}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Analyzed at */}
+            {feedback.analyzedAt && (
+                <p className="text-xs text-gray-400 text-right">
+                    Last analyzed: {new Date(feedback.analyzedAt).toLocaleString("en-IN", {
+                        day: "numeric", month: "short", year: "numeric",
+                        hour: "2-digit", minute: "2-digit", hour12: true,
+                    })}
+                </p>
+            )}
+        </div>
+    );
+};
 const StudentVerificationCard = () => {
     const dispatch = useDispatch();
     const { user, verification } = useSelector((store) => store.auth);
@@ -167,7 +346,10 @@ const StudentVerificationCard = () => {
         setRecalculating(true);
         try {
             const res = await axios.post(`${VERIFICATION_API_END_POINT}/recalculate-ats`, {}, { withCredentials: true });
-            if (res.data.success) { toast.success(`ATS Score: ${res.data.atsScore}/100`); fetchStatus(); }
+            if (res.data.success) {
+                toast.success(`ATS Score: ${res.data.atsScore}/100 — AI analysis updated`);
+                fetchStatus(); // re-fetch full verification including aiAtsFeedback
+            }
         } catch (err) { toast.error(err.response?.data?.message || "Failed to recalculate"); }
         finally { setRecalculating(false); }
     };
@@ -182,7 +364,7 @@ const StudentVerificationCard = () => {
         isEmailVerified, isCollegeEmail, isVerified,
         atsScore, atsFeedback, trustScore, profileCompleteness,
         cgpa: verCgpa, hasCgpaProof, hasResume, hasGithub, hasLinkedin,
-        eligibilityStatus,
+        eligibilityStatus, aiAtsFeedback,
     } = verification;
 
     const trustColor = trustScore >= 80 ? "bg-green-500" : trustScore >= 60 ? "bg-blue-500" : trustScore >= 40 ? "bg-yellow-400" : "bg-red-400";
@@ -217,8 +399,8 @@ const StudentVerificationCard = () => {
                             </Badge>
                         )}
                         <Badge className={`${eligibilityStatus?.status === "eligible" ? "bg-green-100 text-green-700" :
-                                eligibilityStatus?.status === "limited" ? "bg-yellow-100 text-yellow-700" :
-                                    "bg-red-100 text-red-600"}`}>
+                            eligibilityStatus?.status === "limited" ? "bg-yellow-100 text-yellow-700" :
+                                "bg-red-100 text-red-600"}`}>
                             {eligibilityStatus?.status?.toUpperCase()}
                         </Badge>
                     </div>
@@ -277,6 +459,11 @@ const StudentVerificationCard = () => {
                     <OtpSection userEmail={user?.email} onVerified={() => { fetchStatus(); setShowOtp(false); }} />
                 )}
             </div>
+
+            {/* ── AI ATS Feedback Panel ── */}
+            {hasResume && (
+                <AiAtsFeedbackPanel feedback={aiAtsFeedback} atsScore={atsScore} />
+            )}
 
             {/* ── Social Links ── */}
             <div className="p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl space-y-4">

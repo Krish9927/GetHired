@@ -75,5 +75,5 @@ app.get("*", (req, res) => {
 import './cron/jobsCleanup.js';
 app.listen(PORT, () => {
   connectDB().then(() => seedQuestions());
-  console.log(`✅ Server running at port ${PORT}`);
+  console.log(` Server running at port ${PORT}`);
 });

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../shared/Navbar";
 import { Button } from "../ui/button";
-import { ArrowLeft, Loader2, Building2, Globe, MapPin, FileText, Image, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Building2, Globe, MapPin, FileText, Image, Save, ShieldCheck, Clock, XCircle, Ban, AlertTriangle } from "lucide-react";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import axios from "axios";
 import { COMPANY_API_END_POINT } from "@/utils/constant";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import useGetCompanyById from "@/hooks/useGetCompanyById";
@@ -22,6 +22,85 @@ const FieldGroup = ({ icon: Icon, label, children }) => (
     {children}
   </div>
 );
+
+// ── Approval status banner ─────────────────────────────────────────────────────
+const APPROVAL_CONFIG = {
+  approved: {
+    icon: <ShieldCheck className="w-5 h-5 text-green-600 shrink-0" />,
+    title: "Company approved",
+    body: "Your company has been approved by an admin. You can now post jobs on the platform.",
+    cls: "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800",
+    titleCls: "text-green-800 dark:text-green-200",
+    bodyCls: "text-green-700 dark:text-green-300",
+    action: (
+      <Link
+        to="/admin/jobs/create"
+        className="inline-flex items-center gap-1 text-sm font-semibold mt-2 underline underline-offset-2 text-green-700 dark:text-green-300 hover:opacity-80"
+      >
+        Post a job now →
+      </Link>
+    ),
+  },
+  pending: {
+    icon: <Clock className="w-5 h-5 text-yellow-600 shrink-0" />,
+    title: "Awaiting admin approval",
+    body: "Your company is under review. An admin will approve or reject it shortly. You cannot post jobs until it is approved.",
+    cls: "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800",
+    titleCls: "text-yellow-800 dark:text-yellow-200",
+    bodyCls: "text-yellow-700 dark:text-yellow-300",
+    action: (
+      <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
+        Tip: completing the verification steps below increases your trust score and speeds up approval.
+      </p>
+    ),
+  },
+  rejected: {
+    icon: <XCircle className="w-5 h-5 text-red-600 shrink-0" />,
+    title: "Registration rejected",
+    body: "Your company registration was rejected by an admin. Update your company details and verification info, then wait for re-review.",
+    cls: "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800",
+    titleCls: "text-red-800 dark:text-red-200",
+    bodyCls: "text-red-700 dark:text-red-300",
+    action: (
+      <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+        Update your information and complete the verification steps below to request a re-review.
+      </p>
+    ),
+  },
+  banned: {
+    icon: <Ban className="w-5 h-5 text-gray-600 shrink-0" />,
+    title: "Company banned",
+    body: "This company has been permanently banned from the platform. All job listings have been removed.",
+    cls: "bg-gray-100 border-gray-300 dark:bg-gray-800 dark:border-gray-700",
+    titleCls: "text-gray-800 dark:text-gray-200",
+    bodyCls: "text-gray-600 dark:text-gray-400",
+    action: null,
+  },
+};
+
+const ApprovalBanner = ({ company }) => {
+  if (!company) return null;
+  const status = company.verificationStatus ?? "pending";
+  const cfg = APPROVAL_CONFIG[status] ?? APPROVAL_CONFIG.pending;
+
+  return (
+    <div className={`rounded-2xl border p-4 flex items-start gap-3 ${cfg.cls}`}>
+      {cfg.icon}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className={`font-semibold text-sm ${cfg.titleCls}`}>{cfg.title}</p>
+          {company.adminNote && (
+            <span className="text-xs text-gray-500 dark:text-gray-400 italic">
+              Admin note: "{company.adminNote}"
+            </span>
+          )}
+        </div>
+        <p className={`text-sm mt-0.5 ${cfg.bodyCls}`}>{cfg.body}</p>
+        {cfg.action}
+      </div>
+    </div>
+  );
+};
 
 const CompanySetup = () => {
   const params = useParams();
@@ -121,6 +200,9 @@ const CompanySetup = () => {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+        {/* Approval status banner */}
+        <ApprovalBanner company={singleCompany} />
+
         {/* Basic Info Card */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">

@@ -1,6 +1,7 @@
 import axios from "axios";
 import cloudinary from "./cloudinary.js";
 import { createRequire } from "module";
+import { ragScoreResume } from "./ragAtsScorer.js";
 
 const require = createRequire(import.meta.url);
 const pdfParse = require("pdf-parse"); // v1.1.1 exports the function directly
@@ -149,6 +150,13 @@ const fetchPdfBuffer = async (resumeUrl, publicId) => {
 };
 
 // ── Main scorer ───────────────────────────────────────────────────────────────
+/**
+ * Hybrid ATS scorer: keyword match (fast) + Gemini AI RAG (deep)
+ * Returns { score, feedback } where feedback has full AI analysis
+ *
+ * @param {string} resumeUrl - Cloudinary URL of the resume PDF
+ * @returns {{ score: number, feedback: object }} finalScore + detailed feedback
+ */
 export const scoreResumeFromUrl = async (resumeUrl) => {
     try {
         console.log("[ATS] Scoring resume:", resumeUrl);
@@ -159,7 +167,7 @@ export const scoreResumeFromUrl = async (resumeUrl) => {
 
         if (!buffer || buffer.length < 4 || buffer.toString("ascii", 0, 4) !== "%PDF") {
             console.error("[ATS] Not a valid PDF after all strategies. First bytes:", buffer?.toString("ascii", 0, 20));
-            return 0;
+            return { score: 0, feedback: null };
         }
 
         const data = await pdfParse(buffer, { max: 10 });
@@ -167,13 +175,37 @@ export const scoreResumeFromUrl = async (resumeUrl) => {
 
         if (!text || text.length < 50) {
             console.error("[ATS] No readable text — likely image-based PDF");
-            return 5;
+            return { score: 5, feedback: null };
         }
 
         console.log("[ATS] Text length:", text.length, "chars");
-        return calculateAtsScore(text);
+
+        // Step 1: Fast keyword score (free, instant, no API call)
+        const keywordScore = calculateAtsScore(text);
+        console.log(`[ATS] Keyword score: ${keywordScore}/100`);
+
+        // Step 2: Hybrid RAG score (Gemini AI + keyword blend)
+        const ragResult = await ragScoreResume(text, keywordScore);
+
+        return {
+            score: ragResult.finalScore,
+            feedback: {
+                aiScore: ragResult.aiScore,
+                keywordScore: ragResult.keywordScore,
+                source: ragResult.source,
+                strengths: ragResult.strengths,
+                gaps: ragResult.gaps,
+                suggestions: ragResult.suggestions,
+                keywordsFound: ragResult.keywordsFound,
+                keywordsMissing: ragResult.keywordsMissing,
+                sectionsFound: ragResult.sectionsFound,
+                sectionsMissing: ragResult.sectionsMissing,
+                levelDetected: ragResult.levelDetected,
+                summary: ragResult.summary,
+            },
+        };
     } catch (err) {
         console.error("[ATS] Error scoring resume:", err.message);
-        return 0;
+        return { score: 0, feedback: null };
     }
 };

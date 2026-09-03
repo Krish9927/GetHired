@@ -1,10 +1,10 @@
-import { User } from "../models/user.model.js";
+import { BaseUser } from "../models/baseUser.model.js";
 
 // Simple admin check — users with role "recruiter" and a special admin flag
 // For now we use a hardcoded admin email from env, or you can add an isAdmin field to User
 const isAdmin = async (req, res, next) => {
     try {
-        const user = await User.findById(req.id);
+        const user = await BaseUser.findById(req.id);
         if (!user) return res.status(401).json({ message: "Unauthorized", success: false });
 
         const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase());

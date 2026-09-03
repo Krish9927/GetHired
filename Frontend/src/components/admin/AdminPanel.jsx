@@ -3,7 +3,7 @@ import Navbar from "../shared/Navbar";
 import Footer from "../shared/Footer";
 import axios from "axios";
 import { toast } from "sonner";
-import { COMPANY_VERIFICATION_API_END_POINT } from "@/utils/constant";
+import { COMPANY_VERIFICATION_API_END_POINT, USER_API_END_POINT } from "@/utils/constant";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -11,7 +11,10 @@ import {
     Table, TableBody, TableCaption, TableCell,
     TableHead, TableHeader, TableRow,
 } from "../ui/table";
-import { ShieldCheck, ShieldAlert, AlertTriangle, Ban } from "lucide-react";
+import { ShieldCheck, ShieldAlert, AlertTriangle, Ban, LogOut } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { logout } from "@/redux/authSlice";
+import { useNavigate } from "react-router-dom";
 
 const AdminPanel = () => {
     const [companies, setCompanies] = useState([]);
@@ -19,6 +22,19 @@ const AdminPanel = () => {
     const [tab, setTab] = useState("companies");
     const [noteMap, setNoteMap] = useState({});
     const [loading, setLoading] = useState(false);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            await axios.get(`${USER_API_END_POINT}/logout`, { withCredentials: true });
+        } catch (_) {
+            // ignore logout API errors — clear client state regardless
+        }
+        dispatch(logout());
+        navigate("/admin/login");
+        toast.success("Logged out of admin panel");
+    };
 
     useEffect(() => {
         fetchCompanies();
@@ -92,6 +108,14 @@ const AdminPanel = () => {
             <div className="max-w-6xl mx-auto my-10">
                 <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
                     <ShieldCheck className="w-6 h-6 text-blue-600" /> Admin Panel
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="ml-auto flex items-center gap-1.5 text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={handleLogout}
+                    >
+                        <LogOut className="w-4 h-4" /> Logout
+                    </Button>
                 </h1>
 
                 {/* Tabs */}

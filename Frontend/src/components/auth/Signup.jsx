@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -8,7 +8,7 @@ import { USER_API_END_POINT } from "@/utils/constant";
 import { toast } from "sonner";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoading } from "@/redux/authSlice";
-import { Loader2, Mail, Lock, User, Phone, Briefcase, GraduationCap, ImagePlus } from "lucide-react";
+import { Loader2, Mail, Lock, User, Phone, Briefcase, GraduationCap, ImagePlus, Bot, FileText, ShieldCheck, Globe } from "lucide-react";
 
 const Signup = () => {
   const [input, setInput] = useState({
@@ -23,6 +23,7 @@ const Signup = () => {
   const { loading, user } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const isInitialMount = useRef(true);
 
   const changeEventHandler = (e) => {
     setInput({ ...input, [e.target.name]: e.target.value });
@@ -63,51 +64,85 @@ const Signup = () => {
     }
   };
 
+  // Only redirect if user was already logged in when the page loaded (not mid-registration)
   useEffect(() => {
-    if (user) navigate("/");
-  }, []);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      if (user) navigate("/");
+    }
+  }, [user]);
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#6A38C2] to-[#4f28a0] flex-col justify-between p-12 text-white">
-        <div>
-          <h1 className="text-3xl font-bold">
-            Get<span className="text-[#F83002]">Hired</span>
-          </h1>
-          <p className="text-purple-200 text-sm mt-1">Your career starts here</p>
-        </div>
-        <div className="space-y-6">
-          <h2 className="text-4xl font-bold leading-tight">
-            Join thousands of<br />professionals today
-          </h2>
-          <p className="text-purple-200 text-lg">
-            Create your profile, get verified, and start applying to top companies in minutes.
-          </p>
-          <div className="space-y-3">
-            {[
-              "Free to join — no hidden fees",
-              "Get a verified candidate badge",
-              "AI-powered ATS resume scoring",
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-2 text-purple-100">
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">✓</div>
-                <span className="text-sm">{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <p className="text-purple-300 text-xs">© 2025 GetHired. All rights reserved.</p>
-      </div>
-
-      {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-950 overflow-y-auto">
-        <div className="w-full max-w-md py-8">
-          {/* Mobile logo */}
-          <div className="lg:hidden mb-8 text-center">
-            <h1 className="text-2xl font-bold">
+    <div className="h-screen flex overflow-hidden">
+      {/* ── Left branding panel — fixed, never scrolls ── */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#6A38C2] to-[#4f28a0] flex-col p-10 text-white fixed top-0 left-0 h-screen overflow-y-auto">
+        {/* Logo */}
+        <div className="mb-8">
+          <Link to="/">
+            <h1 className="text-3xl font-bold hover:opacity-80 transition-opacity">
               Get<span className="text-[#F83002]">Hired</span>
             </h1>
+          </Link>
+          <p className="text-purple-200 text-sm mt-1">Your career starts here</p>
+        </div>
+
+        {/* Headline */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold leading-tight mb-3">
+            Join thousands of<br />professionals today
+          </h2>
+          <p className="text-purple-200 text-sm leading-relaxed">
+            Create your profile, get verified, and start applying to top companies in minutes.
+          </p>
+        </div>
+
+        {/* Features */}
+        <div className="flex flex-col gap-4 flex-1">
+          {[
+            {
+              icon: <Bot className="w-5 h-5 text-purple-200" />,
+              title: "AI Chatbot",
+              desc: "Get instant answers about jobs, applications and your profile.",
+            },
+            {
+              icon: <FileText className="w-5 h-5 text-purple-200" />,
+              title: "ATS Resume Scoring",
+              desc: "AI-powered resume analysis to help you pass recruiter shortlisting.",
+            },
+            {
+              icon: <ShieldCheck className="w-5 h-5 text-purple-200" />,
+              title: "Trust Score Badge",
+              desc: "Verify via email, CGPA proof, LinkedIn and GitHub to stand out.",
+            },
+            {
+              icon: <Globe className="w-5 h-5 text-purple-200" />,
+              title: "Global Job Board",
+              desc: "Browse remote and on-site jobs from Remotive, Arbeitnow and more.",
+            },
+          ].map((f) => (
+            <div key={f.title} className="flex items-start gap-3 bg-white/10 rounded-xl p-4">
+              <div className="mt-0.5 shrink-0">{f.icon}</div>
+              <div>
+                <p className="text-sm font-semibold text-white">{f.title}</p>
+                <p className="text-xs text-purple-200 mt-0.5 leading-snug">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-purple-300 text-xs mt-8">© 2025 GetHired. All rights reserved.</p>
+      </div>
+
+      {/* ── Right form panel — scrolls independently, no extra space ── */}
+      <div className="flex-1 lg:ml-[50%] overflow-y-auto h-screen bg-gray-50 dark:bg-gray-950">
+        <div className="w-full max-w-md mx-auto px-6 py-10">
+          {/* Mobile logo */}
+          <div className="lg:hidden mb-8 text-center">
+            <Link to="/">
+              <h1 className="text-2xl font-bold hover:opacity-80 transition-opacity">
+                Get<span className="text-[#F83002]">Hired</span>
+              </h1>
+            </Link>
           </div>
 
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-800">
