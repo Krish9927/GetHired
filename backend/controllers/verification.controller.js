@@ -1,4 +1,4 @@
-import { User } from "../models/user.model.js";
+import { Student } from "../models/student.model.js";
 import { sendOtpEmail } from "../utils/mailer.js";
 import { scoreResumeFromUrl } from "../utils/atsScorer.js";
 import {
@@ -13,7 +13,7 @@ import crypto from "crypto";
 // ─── Send OTP ────────────────────────────────────────────────────────────────
 export const sendOtp = async (req, res) => {
     try {
-        const user = await User.findById(req.id);
+        const user = await Student.findById(req.id);
         if (!user) return res.status(404).json({ message: "User not found", success: false });
         if (user.isEmailVerified)
             return res.status(400).json({ message: "Email already verified", success: false });
@@ -35,7 +35,7 @@ export const sendOtp = async (req, res) => {
 export const verifyOtp = async (req, res) => {
     try {
         const { otp } = req.body;
-        const user = await User.findById(req.id);
+        const user = await Student.findById(req.id);
         if (!user) return res.status(404).json({ message: "User not found", success: false });
 
         if (!user.emailOtp || !user.emailOtpExpiry)
@@ -74,7 +74,7 @@ export const uploadCgpaProof = async (req, res) => {
     try {
         const { cgpa, college } = req.body;
         const file = req.file;
-        const user = await User.findById(req.id);
+        const user = await Student.findById(req.id);
         if (!user) return res.status(404).json({ message: "User not found", success: false });
 
         if (cgpa !== undefined) {
@@ -111,7 +111,7 @@ export const uploadCgpaProof = async (req, res) => {
 export const updateSocialLinks = async (req, res) => {
     try {
         const { githubUrl, linkedinUrl } = req.body;
-        const user = await User.findById(req.id);
+        const user = await Student.findById(req.id);
         if (!user) return res.status(404).json({ message: "User not found", success: false });
 
         if (githubUrl !== undefined) user.profile.githubUrl = githubUrl;
@@ -134,19 +134,26 @@ export const updateSocialLinks = async (req, res) => {
 // ─── Recalculate ATS Score ───────────────────────────────────────────────────
 export const recalculateAts = async (req, res) => {
     try {
-        const user = await User.findById(req.id);
+        const user = await Student.findById(req.id);
         if (!user) return res.status(404).json({ message: "User not found", success: false });
         if (!user.profile?.resume)
             return res.status(400).json({ message: "No resume uploaded", success: false });
 
-        user.atsScore = await scoreResumeFromUrl(user.profile.resume);
-        await recalculateScores(user);
+        // Hybrid ATS scoring — returns { score, feedback }
+        const atsResult = await scoreResumeFromUrl(user.profile.resume);
+        user.atsScore = atsResult.score;
+        if (atsResult.feedback) {
+            user.atsFeedback = { ...atsResult.feedback, analyzedAt: new Date() };
+        }
+
+        await recalculateScores(user, false); // false = skip re-running ATS (already done)
         await user.save();
 
         return res.status(200).json({
             message: "ATS score updated",
             success: true,
             atsScore: user.atsScore,
+            atsFeedback: user.atsFeedback,
             trustScore: user.trustScore,
         });
     } catch (error) {
@@ -158,8 +165,8 @@ export const recalculateAts = async (req, res) => {
 // ─── Get Verification Status ─────────────────────────────────────────────────
 export const getVerificationStatus = async (req, res) => {
     try {
-        const user = await User.findById(req.id).select(
-            "fullname email isEmailVerified isCollegeEmail isVerified atsScore trustScore profileCompleteness profile.cgpa profile.cgpaProof profile.githubUrl profile.linkedinUrl profile.resume profile.skills profile.bio profile.college"
+        const user = await Student.findById(req.id).select(
+            "fullname email isEmailVerified isCollegeEmail isVerified atsScore atsFeedback trustScore profileCompleteness profile.cgpa profile.cgpaProof profile.githubUrl profile.linkedinUrl profile.resume profile.skills profile.bio profile.college"
         );
         if (!user) return res.status(404).json({ message: "User not found", success: false });
 
@@ -173,7 +180,8 @@ export const getVerificationStatus = async (req, res) => {
                 isCollegeEmail: user.isCollegeEmail,
                 isVerified: user.isVerified,
                 atsScore: user.atsScore,
-                atsFeedback,
+                atsFeedback,                        // basic level/message feedback
+                aiAtsFeedback: user.atsFeedback || null, // full RAG + Gemini feedback
                 trustScore: user.trustScore,
                 profileCompleteness: user.profileCompleteness,
                 cgpa: user.profile?.cgpa,
@@ -191,10 +199,14 @@ export const getVerificationStatus = async (req, res) => {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-const recalculateScores = async (user) => {
-    // Always recalculate ATS if resume exists
-    if (user.profile?.resume) {
-        user.atsScore = await scoreResumeFromUrl(user.profile.resume);
+// runAts=true by default; pass false when ATS was already calculated externally
+const recalculateScores = async (user, runAts = true) => {
+    if (runAts && user.profile?.resume) {
+        const atsResult = await scoreResumeFromUrl(user.profile.resume);
+        user.atsScore = atsResult.score;
+        if (atsResult.feedback) {
+            user.atsFeedback = { ...atsResult.feedback, analyzedAt: new Date() };
+        }
     }
     user.profileCompleteness = calculateProfileCompleteness(user);
     user.trustScore = calculateTrustScore(user);

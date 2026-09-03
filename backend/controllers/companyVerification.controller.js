@@ -1,6 +1,6 @@
 import { Company } from "../models/company.model.js";
 import { Job } from "../models/job.model.js";
-import { User } from "../models/user.model.js";
+import { BaseUser as User } from "../models/baseUser.model.js";
 import { sendOtpEmail } from "../utils/mailer.js";
 import {
     isPersonalEmail,

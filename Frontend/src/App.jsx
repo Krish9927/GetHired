@@ -13,6 +13,8 @@ import AdminJobs from "./components/admin/AdminJobs";
 import PostJob from "./components/admin/PostJob";
 import Applicants from "./components/admin/Applicants";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
+import AdminLogin from "./components/admin/AdminLogin";
+import AdminProtectedRoute from "./components/admin/AdminProtectedRoute";
 import AdminPanel from "./components/admin/AdminPanel";
 import SelectedCandidates from "./pages/SelectedCandidates.jsx";
 import ForgotPassword from "./components/auth/ForgotPassword";
@@ -32,43 +34,32 @@ const appRouter = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
+      // ── Public routes ────────────────────────────────────────────────────
+      { path: "/", element: <Home /> },
+      { path: "/login", element: <Login /> },
+      { path: "/signup", element: <Signup /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/jobs", element: <Jobs /> },
+      { path: "/description/:id", element: <JobDescription /> },
+      { path: "/browse", element: <Browse /> },
+      { path: "/selected-candidates", element: <SelectedCandidates /> },
+      { path: "/profile", element: <Profile /> },
+      { path: "/test/:testId", element: <TakeTest /> },
+
+      // ── Admin login (public) ─────────────────────────────────────────────
+      { path: "/admin/login", element: <AdminLogin /> },
+
+      // ── Admin-only panel (requires isAdmin flag) ─────────────────────────
       {
-        path: "/",
-        element: <Home />,
+        path: "/admin/panel",
+        element: (
+          <AdminProtectedRoute>
+            <AdminPanel />
+          </AdminProtectedRoute>
+        ),
       },
-      {
-        path: "/login",
-        element: <Login />,
-      },
-      {
-        path: "/signup",
-        element: <Signup />,
-      },
-      {
-        path: "/forgot-password",
-        element: <ForgotPassword />,
-      },
-      {
-        path: "/jobs",
-        element: <Jobs />,
-      },
-      {
-        path: "/description/:id",
-        element: <JobDescription />,
-      },
-      {
-        path: "/browse",
-        element: <Browse />,
-      },
-      {
-        path: "/selected-candidates",
-        element: <SelectedCandidates />,
-      },
-      {
-        path: "/profile",
-        element: <Profile />,
-      },
-      // admin ke liye yha se start hoga
+
+      // ── Recruiter routes (requires role === "recruiter") ─────────────────
       {
         path: "/admin/companies",
         element: (
@@ -118,14 +109,6 @@ const appRouter = createBrowserRouter([
         ),
       },
       {
-        path: "/admin/panel",
-        element: (
-          <ProtectedRoute>
-            <AdminPanel />
-          </ProtectedRoute>
-        ),
-      },
-      {
         path: "/admin/jobs/:jobId/create-test",
         element: (
           <ProtectedRoute>
@@ -141,13 +124,10 @@ const appRouter = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-      {
-        path: "/test/:testId",
-        element: <TakeTest />,
-      },
     ],
   },
 ]);
+
 function App() {
   return (
     <div className="dark:bg-gray-900 flex flex-col flex-1">

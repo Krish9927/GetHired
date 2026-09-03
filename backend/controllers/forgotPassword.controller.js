@@ -1,26 +1,28 @@
-import { User } from "../models/user.model.js";
+import { BaseUser } from "../models/baseUser.model.js";
 import { sendForgotPasswordEmail } from "../utils/mailer.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
-// ─── Step 1: Send OTP to email ────────────────────────────────────────────────
+// BaseUser covers both Student and Recruiter since they share the same collection.
+// Searching BaseUser by email will find either role transparently.
+
+// ─── Step 1: Send OTP ─────────────────────────────────────────────────────────
 export const sendResetOtp = async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ message: "Email is required", success: false });
 
-        const user = await User.findOne({ email });
+        const user = await BaseUser.findOne({ email });
         if (!user) {
-            return res.status(404).json({ message: "No account found with this email address", success: false });
+            return res.status(404).json({ message: "No account found with this email", success: false });
         }
 
         const otp = crypto.randomInt(100000, 999999).toString();
         user.resetPasswordOtp = otp;
-        user.resetPasswordOtpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+        user.resetPasswordOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
         await user.save();
 
         await sendForgotPasswordEmail(email, otp, user.fullname);
-
         return res.status(200).json({ message: "OTP sent to your email", success: true });
     } catch (error) {
         console.error(error);
@@ -32,17 +34,17 @@ export const sendResetOtp = async (req, res) => {
 export const verifyResetOtp = async (req, res) => {
     try {
         const { email, otp } = req.body;
-        if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required", success: false });
+        if (!email || !otp) {
+            return res.status(400).json({ message: "Email and OTP are required", success: false });
+        }
 
-        const user = await User.findOne({ email });
+        const user = await BaseUser.findOne({ email });
         if (!user || !user.resetPasswordOtp || !user.resetPasswordOtpExpiry) {
             return res.status(400).json({ message: "No reset request found. Please request a new OTP.", success: false });
         }
-
         if (new Date() > user.resetPasswordOtpExpiry) {
             return res.status(400).json({ message: "OTP has expired. Please request a new one.", success: false });
         }
-
         if (user.resetPasswordOtp !== otp.toString()) {
             return res.status(400).json({ message: "Invalid OTP", success: false });
         }
@@ -54,7 +56,7 @@ export const verifyResetOtp = async (req, res) => {
     }
 };
 
-// ─── Step 3: Reset password ───────────────────────────────────────────────────
+// ─── Step 3: Reset Password ───────────────────────────────────────────────────
 export const resetPassword = async (req, res) => {
     try {
         const { email, otp, newPassword } = req.body;
@@ -65,15 +67,13 @@ export const resetPassword = async (req, res) => {
             return res.status(400).json({ message: "Password must be at least 6 characters", success: false });
         }
 
-        const user = await User.findOne({ email });
+        const user = await BaseUser.findOne({ email });
         if (!user || !user.resetPasswordOtp || !user.resetPasswordOtpExpiry) {
             return res.status(400).json({ message: "No reset request found", success: false });
         }
-
         if (new Date() > user.resetPasswordOtpExpiry) {
             return res.status(400).json({ message: "OTP has expired", success: false });
         }
-
         if (user.resetPasswordOtp !== otp.toString()) {
             return res.status(400).json({ message: "Invalid OTP", success: false });
         }

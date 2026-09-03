@@ -17,8 +17,13 @@ const authSlice = createSlice({
         setVerification: (state, action) => {
             state.verification = action.payload;
         },
+        logout: (state) => {
+            state.user = null;
+            state.loading = false;
+            state.verification = null;
+        },
     },
 });
 
-export const { setLoading, setUser, setVerification } = authSlice.actions;
+export const { setLoading, setUser, setVerification, logout } = authSlice.actions;
 export default authSlice.reducer;

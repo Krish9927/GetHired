@@ -3,7 +3,7 @@ import { Question } from "../models/question.model.js";
 import { TestSubmission } from "../models/testSubmission.model.js";
 import { Job } from "../models/job.model.js";
 import { Application } from "../models/application.model.js";
-import { User } from "../models/user.model.js";
+import { BaseUser as User } from "../models/baseUser.model.js";
 import { sendTestInviteEmail, sendTestResultEmail, sendApplicationAcceptedEmail } from "../utils/mailer.js";
 import { QUESTION_BANK } from "../utils/questionBank.js";
 

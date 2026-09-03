@@ -2,12 +2,12 @@ import React from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { Avatar, AvatarImage } from "../ui/avatar";
-import { LogOut, User2 } from "lucide-react";
+import { LogOut, User2, ShieldCheck } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { USER_API_END_POINT } from "@/utils/constant";
-import { setUser } from "@/redux/authSlice";
+import { setUser, logout } from "@/redux/authSlice";
 import { toast } from "sonner";
 import ThemeSwitcher from "../ThemeSwitcher";
 
@@ -22,7 +22,7 @@ const Navbar = () => {
         withCredentials: true,
       });
       if (res.data.success) {
-        dispatch(setUser(null));
+        dispatch(logout());
         navigate("/");
         toast.success(res.data.message);
       }
@@ -81,6 +81,12 @@ const Navbar = () => {
               <Link to="/signup">
                 <Button className="bg-[#6A38C2] hover:bg-[#5b30a6]">
                   Signup
+                </Button>
+              </Link>
+              <Link to="/admin/login">
+                <Button variant="ghost" className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 px-2">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Admin
                 </Button>
               </Link>
             </div>

@@ -1,4 +1,4 @@
-import { User } from "../models/user.model.js";
+import { BaseUser as User } from "../models/baseUser.model.js";
 import { Application } from "../models/application.model.js";
 import { generateAIReply } from "../utils/aiChatbot.js";
 import { buildStudentContext, getWelcomeMessage } from "../utils/studentChatbot.js";

@@ -62,6 +62,18 @@ const jobSchema = new mongoose.Schema(
       enum: ["active", "under_review", "rejected"],
       default: "active",
     },
+    // AI detection metadata
+    aiConfidenceScore: { type: Number, default: 0, min: 0, max: 100 },
+    aiVerdict: {
+      type: String,
+      enum: ["safe", "suspicious", "likely_fake", "skipped"],
+      default: "skipped",
+    },
+    detectionMethod: {
+      type: String,
+      enum: ["none", "keyword", "ai", "hybrid"],
+      default: "none",
+    },
     hasTest: {
       type: Boolean,
       default: false,
