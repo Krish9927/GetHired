@@ -5,6 +5,7 @@ import {
   getCompany,
   getCompanyById,
   updateCompany,
+  deleteCompany,
 } from "../controllers/company.controller.js";
 import { getSelectedCandidates } from "../controllers/job.controller.js";
 import { singleUpload } from "../middlewares/multer.js";
@@ -15,6 +16,7 @@ router.route("/register").post(isAuthenticated, registerCompany);
 router.route("/get").get(isAuthenticated, getCompany);
 router.route("/get/:id").get(isAuthenticated, getCompanyById);
 router.route("/update/:id").put(isAuthenticated, singleUpload, updateCompany);
+router.route("/delete/:id").delete(isAuthenticated, deleteCompany);
 router.route("/:companyId/selected-candidates").get(isAuthenticated, getSelectedCandidates);
 
 export default router;

@@ -356,7 +356,226 @@ export const sendForgotPasswordEmail = async (to, otp, fullname) => {
   }
 };
 
-// ── Send Test Invite Email ────────────────────────────────────────────────────
+// ── Company Registration Alert (to Admin) ─────────────────────────────────────
+const companyRegistrationAlertContent = (companyName, recruiterName, recruiterEmail, registeredAt) => `
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:48px 48px 40px;">
+
+      <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:${BRAND_PURPLE};letter-spacing:1px;text-transform:uppercase;">Admin Action Required</p>
+      <h2 style="margin:0 0 12px;font-size:24px;font-weight:700;color:${BRAND_DARK};line-height:1.3;">New company registration</h2>
+      <p style="margin:0 0 32px;font-size:15px;color:#4b5563;line-height:1.7;">
+        A recruiter has registered a new company on <strong>${BRAND_NAME}</strong> and is waiting for your approval before they can post jobs.
+      </p>
+
+      ${infoBox("Company Details", `
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:6px 0;border-bottom:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:13px;color:#6b7280;">Company Name</p>
+              <p style="margin:2px 0 0;font-size:15px;font-weight:700;color:${BRAND_DARK};">${companyName}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;border-bottom:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:13px;color:#6b7280;">Registered By</p>
+              <p style="margin:2px 0 0;font-size:15px;font-weight:600;color:#374151;">${recruiterName}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;border-bottom:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:13px;color:#6b7280;">Recruiter Email</p>
+              <p style="margin:2px 0 0;font-size:15px;color:#374151;">${recruiterEmail}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;">
+              <p style="margin:0;font-size:13px;color:#6b7280;">Registered At</p>
+              <p style="margin:2px 0 0;font-size:14px;color:#374151;">${registeredAt}</p>
+            </td>
+          </tr>
+        </table>
+      `)}
+
+      <div style="background:#fef9ec;border:1px solid #fde68a;border-radius:8px;padding:14px 18px;margin-bottom:28px;">
+        <p style="margin:0;font-size:13px;color:#92400e;line-height:1.6;">
+          The company is currently <strong>pending approval</strong>. They cannot post jobs until you approve their registration from the Admin Panel.
+        </p>
+      </div>
+
+      <div style="text-align:center;margin-bottom:8px;">
+        ${ctaButton(`${APP_URL}/admin/panel`, "Review in Admin Panel")}
+      </div>
+
+      <hr style="border:none;border-top:1px solid #f3f4f6;margin:32px 0 16px;"/>
+      <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6;">
+        This alert was generated automatically when a new company was registered.<br/>
+        Log in to the Admin Panel to approve, reject, or request more information.
+      </p>
+    </td>
+  </tr>
+</table>
+`;
+
+export const sendCompanyRegistrationAlert = async ({ companyName, recruiterName, recruiterEmail }) => {
+  const adminEmails = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+
+  if (!adminEmails.length) {
+    console.warn("⚠️  No ADMIN_EMAILS configured — skipping company registration alert.");
+    return;
+  }
+
+  const registeredAt = new Date().toLocaleString("en-IN", {
+    day: "numeric", month: "long", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hour12: true,
+    timeZone: "Asia/Kolkata",
+  });
+
+  try {
+    const transporter = createTransporter();
+    await transporter.sendMail({
+      from: mailFrom(),
+      to: adminEmails.join(","),
+      subject: `[Action Required] New company registration: ${companyName} — ${BRAND_NAME}`,
+      html: emailWrapper(companyRegistrationAlertContent(companyName, recruiterName, recruiterEmail, registeredAt)),
+    });
+    console.log(`✅ Company registration alert sent to admin(s) for "${companyName}"`);
+  } catch (error) {
+    // Non-blocking — registration should still succeed even if email fails
+    console.error(`❌ Failed to send company registration alert:`, error.message);
+  }
+};
+
+
+// ── Company Status Notification (Approved / Rejected / Banned) ───────────────
+
+const companyApprovedContent = (companyName, recruiterName, adminNote) => `
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:48px 48px 40px;">
+      <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#059669;letter-spacing:1px;text-transform:uppercase;">Company Approved</p>
+      <h2 style="margin:0 0 12px;font-size:24px;font-weight:700;color:${BRAND_DARK};line-height:1.3;">Congratulations, ${recruiterName}!</h2>
+      <p style="margin:0 0 32px;font-size:15px;color:#4b5563;line-height:1.7;">
+        Your company <strong>${companyName}</strong> has been <strong style="color:#059669;">approved</strong> by our admin team.
+        You can now post jobs on <strong>${BRAND_NAME}</strong> and reach verified candidates.
+      </p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:24px 28px;margin-bottom:28px;">
+        <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#059669;letter-spacing:1.5px;text-transform:uppercase;">Approved Company</p>
+        <p style="margin:0;font-size:20px;font-weight:700;color:${BRAND_DARK};">${companyName}</p>
+        ${adminNote ? `<p style="margin:12px 0 0;font-size:13px;color:#4b5563;"><strong>Admin note:</strong> ${adminNote}</p>` : ""}
+      </div>
+      ${infoBox("What you can do now", `
+        <p style="margin:0;font-size:14px;color:#374151;line-height:1.9;">
+          • Post new job openings from your <strong>Jobs</strong> dashboard<br/>
+          • Manage applicants and track candidate progress<br/>
+          • Schedule assessment tests for applicants
+        </p>
+      `, "#059669")}
+      <div style="text-align:center;margin-bottom:8px;">
+        ${ctaButton(`${APP_URL}/admin/jobs/create`, "Post Your First Job")}
+      </div>
+      <hr style="border:none;border-top:1px solid #f3f4f6;margin:32px 0 16px;"/>
+      <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">— The ${BRAND_NAME} Admin Team</p>
+    </td>
+  </tr>
+</table>
+`;
+
+const companyRejectedContent = (companyName, recruiterName, adminNote) => `
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:48px 48px 40px;">
+      <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:${BRAND_ORANGE};letter-spacing:1px;text-transform:uppercase;">Registration Update</p>
+      <h2 style="margin:0 0 12px;font-size:24px;font-weight:700;color:${BRAND_DARK};line-height:1.3;">Company Registration Rejected</h2>
+      <p style="margin:0 0 32px;font-size:15px;color:#4b5563;line-height:1.7;">
+        Dear <strong>${recruiterName}</strong>, after reviewing your submission, our admin team has <strong style="color:${BRAND_ORANGE};">rejected</strong> the registration for <strong>${companyName}</strong>.
+      </p>
+      ${adminNote ? infoBox("Reason from Admin", `<p style="margin:0;font-size:14px;color:#374151;line-height:1.7;">${adminNote}</p>`, BRAND_ORANGE) : ""}
+      ${infoBox("How to resolve this", `
+        <p style="margin:0;font-size:14px;color:#374151;line-height:1.9;">
+          1. Log in to your ${BRAND_NAME} account<br/>
+          2. Go to <strong>Companies → your company profile</strong><br/>
+          3. Update your details and complete verification steps (official email, website, LinkedIn, GST/CIN)<br/>
+          4. Wait for admin re-review after making changes
+        </p>
+      `, BRAND_ORANGE)}
+      <div style="text-align:center;margin-bottom:8px;">
+        ${ctaButton(`${APP_URL}/admin/companies`, "Update Company Profile")}
+      </div>
+      <hr style="border:none;border-top:1px solid #f3f4f6;margin:32px 0 16px;"/>
+      <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">
+        If you believe this is a mistake, please contact our support team.<br/>
+        — The ${BRAND_NAME} Admin Team
+      </p>
+    </td>
+  </tr>
+</table>
+`;
+
+const companyBannedContent = (companyName, recruiterName, adminNote) => `
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="padding:48px 48px 40px;">
+      <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">Account Notice</p>
+      <h2 style="margin:0 0 12px;font-size:24px;font-weight:700;color:${BRAND_DARK};line-height:1.3;">Company Banned from Platform</h2>
+      <p style="margin:0 0 32px;font-size:15px;color:#4b5563;line-height:1.7;">
+        Dear <strong>${recruiterName}</strong>, your company <strong>${companyName}</strong> has been <strong>permanently banned</strong> from <strong>${BRAND_NAME}</strong>. All associated job listings have been removed.
+      </p>
+      ${adminNote ? infoBox("Reason", `<p style="margin:0;font-size:14px;color:#374151;line-height:1.7;">${adminNote}</p>`, "#6b7280") : ""}
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;">
+        <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+          If you believe this action was taken in error, contact our support team with your company details and reason for appeal.
+        </p>
+      </div>
+      <hr style="border:none;border-top:1px solid #f3f4f6;margin:32px 0 16px;"/>
+      <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">— The ${BRAND_NAME} Admin Team</p>
+    </td>
+  </tr>
+</table>
+`;
+
+/**
+ * Send company approval / rejection / ban notification to the recruiter.
+ * @param {"approved"|"rejected"|"banned"} action
+ * @param {{ companyName, recruiterEmail, recruiterName, adminNote }} opts
+ */
+export const sendCompanyStatusEmail = async (action, { companyName, recruiterEmail, recruiterName, adminNote = "" }) => {
+  if (!recruiterEmail) {
+    console.warn("[Mailer] sendCompanyStatusEmail: no recruiter email — skipping.");
+    return;
+  }
+
+  const configs = {
+    approved: {
+      subject: `✅ Your company "${companyName}" has been approved — ${BRAND_NAME}`,
+      html: emailWrapper(companyApprovedContent(companyName, recruiterName, adminNote)),
+    },
+    rejected: {
+      subject: `Company registration update: "${companyName}" — ${BRAND_NAME}`,
+      html: emailWrapper(companyRejectedContent(companyName, recruiterName, adminNote)),
+    },
+    banned: {
+      subject: `[Important] Your company "${companyName}" has been banned — ${BRAND_NAME}`,
+      html: emailWrapper(companyBannedContent(companyName, recruiterName, adminNote)),
+    },
+  };
+
+  const cfg = configs[action];
+  if (!cfg) return;
+
+  try {
+    const transporter = createTransporter();
+    await transporter.sendMail({ from: mailFrom(), to: recruiterEmail, ...cfg });
+    console.log(`✅ Company "${action}" email sent to ${recruiterEmail} for "${companyName}"`);
+  } catch (err) {
+    console.error(`❌ Failed to send company ${action} email:`, err.message);
+  }
+};
+
+// ─── Send Test Invite Email ───────────────────────────────────────────────────
 export const sendTestInviteEmail = async (to, fullname, { testTitle, duration, minimumScore, testId, scheduledAt }) => {
   try {
     const transporter = createTransporter();

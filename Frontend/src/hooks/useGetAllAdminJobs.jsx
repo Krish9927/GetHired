@@ -20,7 +20,7 @@ const useGetAllAdminJobs = () => {
       }
     };
     fetchAllAdminJobs();
-  }, []);
+  });
 };
 
 export default useGetAllAdminJobs;
