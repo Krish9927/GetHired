@@ -11,7 +11,6 @@ import { useSelector } from "react-redux";
 import useGetAppliedJobs from "@/hooks/useGetAppliedJobs";
 import Footer from "./shared/Footer";
 import StudentVerificationCard from "./StudentVerificationCard";
-import { ShieldCheck } from "lucide-react";
 
 // const skills = ["Html", "Css", "Javascript", "Reactjs"]
 const isResume = true;
@@ -31,14 +30,7 @@ const Profile = () => {
               <AvatarImage src={user?.profile?.profilePhoto} alt="profile" />
             </Avatar>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-medium text-xl">{user?.fullname}</h1>
-                {user?.isVerified && (
-                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> Verified Candidate
-                  </Badge>
-                )}
-              </div>
+              <h1 className="font-medium text-xl">{user?.fullname}</h1>
               <p className="dark:text-gray-300">{user?.profile?.bio}</p>
             </div>
           </div>

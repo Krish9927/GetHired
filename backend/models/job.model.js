@@ -85,6 +85,9 @@ const jobSchema = new mongoose.Schema(
     testDate: {
       type: Date,
     },
+    testDeadline: {
+      type: Date,
+    },
     testDuration: {
       type: Number,
       default: 30,
@@ -93,6 +96,20 @@ const jobSchema = new mongoose.Schema(
       type: Number,
       default: 60,
     },
+    // Test schedule limit (days from posting)
+    testScheduleLimit: {
+      type: Number,
+      default: 7, // 7 days default
+    },
+    // Test status for expiration logic
+    testScheduleStatus: {
+      type: String,
+      enum: ["pending", "expired", "active"],
+      default: "pending",
+    },
+    // Selection process
+    selectionClosed: { type: Boolean, default: false },
+    selectionClosedAt: { type: Date },
   },
   { timestamps: true }
 );

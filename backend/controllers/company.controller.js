@@ -1,6 +1,8 @@
 import { Company } from "../models/company.model.js";
 import cloudinary from "../utils/cloudinary.js";
 import getDataUri from "../utils/datauri.js";
+import { BaseUser } from "../models/baseUser.model.js";
+import { sendCompanyRegistrationAlert } from "../utils/mailer.js";
 
 export const registerCompany = async (req, res) => {
   try {
@@ -24,6 +26,17 @@ export const registerCompany = async (req, res) => {
       name: companyName,
       userId: req.id,
     });
+
+    // Fire-and-forget — alert admin(s) to review the new registration
+    BaseUser.findById(req.id).select("fullname email").lean()
+      .then((recruiter) => {
+        sendCompanyRegistrationAlert({
+          companyName,
+          recruiterName: recruiter?.fullname || "Unknown",
+          recruiterEmail: recruiter?.email || "Unknown",
+        });
+      })
+      .catch(() => { }); // never block the response
 
     return res.status(201).json({
       message: "Company registered successfully.",
@@ -122,5 +135,25 @@ export const updateCompany = async (req, res) => {
       success: false,
       error: error.message,
     });
+  }
+};
+
+export const deleteCompany = async (req, res) => {
+  try {
+    const companyId = req.params.id;
+    const userId = req.id;
+
+    const company = await Company.findOne({ _id: companyId, userId });
+    if (!company) {
+      return res.status(404).json({ message: "Company not found.", success: false });
+    }
+
+    // Delete the company
+    await Company.findByIdAndDelete(companyId);
+
+    return res.status(200).json({ message: "Company deleted successfully.", success: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error.", success: false });
   }
 };

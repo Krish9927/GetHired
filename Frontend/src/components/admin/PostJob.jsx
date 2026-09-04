@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Navbar from "../shared/Navbar";
+import useGetAllCompanies from "@/hooks/useGetAllCompanies";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -62,6 +63,7 @@ const StatusBadge = ({ status }) => {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const PostJob = () => {
+  useGetAllCompanies();
   const [input, setInput] = useState({
     title: "",
     description: "",
@@ -76,6 +78,7 @@ const PostJob = () => {
     hasTest: false,
     testDescription: "",
     testDate: "",
+    testDeadline: "",
     testDuration: 30,
     testMinimumScore: 60,
   });
@@ -127,6 +130,7 @@ const PostJob = () => {
             scheduledAt: input.testDate,
             durationMinutes: input.testDuration,
             minimumScore: input.testMinimumScore,
+            testDeadline: input.testDeadline,
           }).toString();
           navigate(`/admin/jobs/${jobId}/create-test?${queryParams}`);
         } else {
@@ -353,6 +357,16 @@ const PostJob = () => {
                     type="datetime-local"
                     name="testDate"
                     value={input.testDate}
+                    onChange={changeEventHandler}
+                    className="focus-visible:ring-offset-0 focus-visible:ring-0 my-1"
+                  />
+                </div>
+                <div>
+                  <Label>Last Date & Time to Attempt</Label>
+                  <Input
+                    type="datetime-local"
+                    name="testDeadline"
+                    value={input.testDeadline}
                     onChange={changeEventHandler}
                     className="focus-visible:ring-offset-0 focus-visible:ring-0 my-1"
                   />

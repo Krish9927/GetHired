@@ -1,7 +1,7 @@
 import { Company } from "../models/company.model.js";
 import { Job } from "../models/job.model.js";
 import { BaseUser as User } from "../models/baseUser.model.js";
-import { sendOtpEmail } from "../utils/mailer.js";
+import { sendOtpEmail, sendCompanyStatusEmail } from "../utils/mailer.js";
 import {
     isPersonalEmail,
     getDomainFromEmail,
@@ -10,6 +10,7 @@ import {
     doDomainsMatch,
     calculateCompanyTrustScore,
 } from "../utils/companyTrustScore.js";
+import { analyzeCompanyLegitimacy } from "../utils/companyAnalyzer.js";
 import crypto from "crypto";
 
 // ─── Send Company Email OTP ───────────────────────────────────────────────────
@@ -177,6 +178,17 @@ export const adminApproveCompany = async (req, res) => {
             { new: true }
         );
         if (!company) return res.status(404).json({ message: "Company not found", success: false });
+
+        // Notify the recruiter — fire and forget
+        User.findById(company.userId).select("fullname email").lean()
+            .then((recruiter) => sendCompanyStatusEmail("approved", {
+                companyName: company.name,
+                recruiterEmail: recruiter?.email,
+                recruiterName: recruiter?.fullname || "Recruiter",
+                adminNote: adminNote || "",
+            }))
+            .catch(() => { });
+
         return res.status(200).json({ message: "Company approved", success: true, company });
     } catch (error) {
         console.error(error);
@@ -200,6 +212,17 @@ export const adminRejectCompany = async (req, res) => {
             { new: true }
         );
         if (!company) return res.status(404).json({ message: "Company not found", success: false });
+
+        // Notify the recruiter — fire and forget
+        User.findById(company.userId).select("fullname email").lean()
+            .then((recruiter) => sendCompanyStatusEmail("rejected", {
+                companyName: company.name,
+                recruiterEmail: recruiter?.email,
+                recruiterName: recruiter?.fullname || "Recruiter",
+                adminNote: adminNote || "",
+            }))
+            .catch(() => { });
+
         return res.status(200).json({ message: "Company rejected", success: true, company });
     } catch (error) {
         console.error(error);
@@ -226,6 +249,16 @@ export const adminBanRecruiter = async (req, res) => {
 
         // Also set all their active jobs to rejected
         await Job.updateMany({ company: companyId }, { jobStatus: "rejected" });
+
+        // Notify the recruiter — fire and forget
+        User.findById(company.userId).select("fullname email").lean()
+            .then((recruiter) => sendCompanyStatusEmail("banned", {
+                companyName: company.name,
+                recruiterEmail: recruiter?.email,
+                recruiterName: recruiter?.fullname || "Recruiter",
+                adminNote: company.adminNote || "",
+            }))
+            .catch(() => { });
 
         return res.status(200).json({ message: "Recruiter banned and jobs removed", success: true });
     } catch (error) {
@@ -268,6 +301,22 @@ export const adminRejectJob = async (req, res) => {
         const job = await Job.findByIdAndUpdate(jobId, { jobStatus: "rejected" }, { new: true });
         if (!job) return res.status(404).json({ message: "Job not found", success: false });
         return res.status(200).json({ message: "Job rejected", success: true, job });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Server error", success: false });
+    }
+};
+
+// ─── ADMIN: AI legitimacy analysis for a company ─────────────────────────────
+export const adminAnalyzeCompany = async (req, res) => {
+    try {
+        const { companyId } = req.params;
+        const company = await Company.findById(companyId).lean();
+        if (!company) return res.status(404).json({ message: "Company not found", success: false });
+
+        const analysis = await analyzeCompanyLegitimacy(company);
+
+        return res.status(200).json({ success: true, analysis });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Server error", success: false });

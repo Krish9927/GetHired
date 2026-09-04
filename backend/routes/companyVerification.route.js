@@ -13,6 +13,7 @@ import {
     adminGetSuspiciousJobs,
     adminApproveJob,
     adminRejectJob,
+    adminAnalyzeCompany,
 } from "../controllers/companyVerification.controller.js";
 
 const router = express.Router();
@@ -28,6 +29,7 @@ router.route("/admin/companies").get(isAuthenticated, isAdmin, adminGetAllCompan
 router.route("/admin/companies/approve").post(isAuthenticated, isAdmin, adminApproveCompany);
 router.route("/admin/companies/reject").post(isAuthenticated, isAdmin, adminRejectCompany);
 router.route("/admin/companies/ban").post(isAuthenticated, isAdmin, adminBanRecruiter);
+router.route("/admin/companies/:companyId/analyze").get(isAuthenticated, isAdmin, adminAnalyzeCompany);
 router.route("/admin/jobs/suspicious").get(isAuthenticated, isAdmin, adminGetSuspiciousJobs);
 router.route("/admin/jobs/approve").post(isAuthenticated, isAdmin, adminApproveJob);
 router.route("/admin/jobs/reject").post(isAuthenticated, isAdmin, adminRejectJob);
